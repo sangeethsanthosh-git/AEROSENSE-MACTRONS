@@ -1,0 +1,71 @@
+<style>
+  .card { border:1px solid #3a3a3a; border-radius:10px; background:rgba(51,51,51,0.8); padding:12px; color:#fff; }
+  .card h3 { margin:0 0 8px 0; font-size:16px; font-weight:600; }
+  .kv { display:grid; grid-template-columns:140px 1fr; gap:6px 12px; font-size:14px; }
+  .badges { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .badge { padding:3px 10px; border-radius:999px; font-size:12px; border:1px solid #555; }
+  .ok { background:#2e7d32; }
+  .notok { background:#b26a00; }
+  .danger { background:#b00020; }
+</style>
+
+{% set w = weather or {} %}
+{% set adv = advice or {} %}
+{% set uvi_now = (uvi.now if uvi else None) %}
+{% set desc = (w.desc or w.description or '')|lower %}
+{% set wind = (w.wind_speed or 0)|float %}
+{% set aqi = aqi_bucket or (w.aqi_bucket if w.aqi_bucket is defined else '') %}
+{% set temp = (w.temp or 25)|float %}
+
+{# Signals #}
+{% set storm = ('storm' in desc or 'thunder' in desc) %}
+{% set raining = ('rain' in desc) %}
+{% set high_uv = (uvi_now is number and uvi_now >= 10) %}
+{% set mid_uv = (uvi_now is number and 8 <= uvi_now < 10) %}
+{% set very_windy = (wind >= 14) %}
+{% set windy = (wind >= 8) %}
+{% set bad_air = (aqi in ['Very Poor','Severe']) %}
+{% set poor_air = (aqi in ['Poor']) %}
+
+{# Status helper #}
+{% macro status_label(level) -%}
+  {%- if level == 'danger' -%}<span class="badge danger">Danger</span>
+  {%- elif level == 'notok' -%}<span class="badge notok">Not OK</span>
+  {%- else -%}<span class="badge ok">OK</span>{%- endif -%}
+{%- endmacro %}
+
+{# Activity rules #}
+{# Walking #}
+{% set walk = 'danger' if storm or high_uv or bad_air else
+              'notok'  if raining or mid_uv or poor_air else
+              'ok' %}
+{# Running #}
+{% set run = 'danger' if storm or high_uv or bad_air or very_windy else
+             'notok'  if raining or mid_uv or poor_air or windy else
+             'ok' %}
+{# Cycling #}
+{% set cycle = 'danger' if storm or bad_air or very_windy else
+               'notok'  if raining or mid_uv or poor_air or windy else
+               'ok' %}
+{# Fishing #}
+{% set fish = 'danger' if storm else
+              'notok'  if raining or very_windy or high_uv else
+              'ok' %}
+
+<div class="card">
+  <h3>Outdoor activity</h3>
+  <div class="kv">
+    <div>Temperature</div><div>{{ w.temp }} {{ units_symbol }}</div>
+    <div>Wind</div><div>{{ w.wind_speed }} {{ wind_unit }}</div>
+    <div>UV</div><div>{{ uvi_now if uvi_now is not none else 'N/A' }} {{ '(' ~ (uvi.level if uvi and uvi.level) ~ ')' if uvi and uvi.level }}</div>
+    <div>AQI</div><div>{{ aqi or 'N/A' }}</div>
+    <div>Recommendation</div><div>{{ adv.outdoor or 'N/A' }}</div>
+  </div>
+
+  <div class="badges">
+    <div>Walking: {{ status_label(walk) }}</div>
+    <div>Running: {{ status_label(run) }}</div>
+    <div>Cycling: {{ status_label(cycle) }}</div>
+    <div>Fishing: {{ status_label(fish) }}</div>
+  </div>
+</div>

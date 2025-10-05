@@ -1,0 +1,24 @@
+<div class="sm-card">
+  <h3>UV Index</h3>
+  <div class="sm-kv">
+    <div class="sm-muted">Current</div>
+    <div>
+      {% if uv and uv.now is not none %}
+        {{ uv.now }} ({{ uv.level }})
+      {% else %}
+        N/A
+      {% endif %}
+    </div>
+
+    <div class="sm-muted">Next days</div>
+    <div>
+      {% if uv and uv.daily %}
+        {% for u in uv.daily %}
+          <span style="margin-right:8px">{{ u }}</span>
+        {% endfor %}
+      {% else %}
+        <span>N/A</span>
+      {% endif %}
+    </div>
+  </div>
+</div>

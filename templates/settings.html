@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<style>
+  .settings { max-width:720px; background:rgba(51,51,51,0.8); border:1px solid #3a3a3a; border-radius:10px; padding:16px; color:#fff; }
+  .settings h2 { margin:0 0 12px 0; font-size:18px; }
+  .settings form { display:grid; grid-template-columns:200px 1fr; gap:10px 12px; align-items:center; }
+  .settings select, .settings input[type="text"], .settings input[type="time"], .settings button {
+    background:#333; color:#fff; border:1px solid #555; border-radius:6px; padding:6px 8px;
+  }
+  .settings .row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  .settings .muted { opacity:0.85; grid-column:1 / -1; }
+  .settings button { background:#555; border:0; cursor:pointer; width:max-content; grid-column:1 / -1; }
+  .sec { grid-column:1 / -1; margin-top:8px; font-weight:600; opacity:0.95; }
+</style>
+
+<div class="settings">
+  <h2>Settings</h2>
+  <form method="POST" action="{{ url_for('settings') }}">
+
+    <div class="sec">Language & Units</div>
+    <label for="lang">Language</label>
+    <select id="lang" name="lang">
+      {% for code in languages %}
+        <option value="{{ code }}" {% if code == selected %}selected{% endif %}>{{ code|upper }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="units">Temperature</label>
+    <select id="units" name="units">
+      <option value="metric" {% if current_units == 'metric' %}selected{% endif %}>Celsius (°C)</option>
+      <option value="imperial" {% if current_units == 'imperial' %}selected{% endif %}>Fahrenheit (°F)</option>
+    </select>
+
+    <div class="sec">Time & Date</div>
+    <label>Time format</label>
+    <div class="row">
+      <label><input type="radio" name="time_format" value="24h" {% if time_format=='24h' %}checked{% endif %}> 24-hour</label>
+      <label><input type="radio" name="time_format" value="12h" {% if time_format=='12h' %}checked{% endif %}> 12-hour</label>
+    </div>
+
+    <label>Date format</label>
+    <select name="date_format">
+      <option value="DD-MM-YYYY" {% if date_format=='DD-MM-YYYY' %}selected{% endif %}>DD-MM-YYYY</option>
+      <option value="MM-DD-YYYY" {% if date_format=='MM-DD-YYYY' %}selected{% endif %}>MM-DD-YYYY</option>
+    </select>
+
+    <div class="sec">Health & Activity</div>
+    <label>Health</label>
+    <div class="row">
+      <label><input type="checkbox" name="health_flags" value="asthma" {% if 'asthma' in health_flags %}checked{% endif %}> Asthma</label>
+      <label><input type="checkbox" name="health_flags" value="cardiac" {% if 'cardiac' in health_flags %}checked{% endif %}> Cardiac</label>
+    </div>
+
+    <label>Activities</label>
+    <div>
+      <div class="row">
+        <label><input type="checkbox" name="sports" value="cricket" {% if 'cricket' in activities.sports %}checked{% endif %}> Cricket</label>
+        <label><input type="checkbox" name="sports" value="football" {% if 'football' in activities.sports %}checked{% endif %}> Football</label>
+      </div>
+      <div style="margin-top:6px">
+        <input type="text" name="training_hours" value="{{ activities.hours }}" placeholder="Preferred training hours e.g. 05:30–07:30">
+      </div>
+    </div>
+
+    <div class="sec">Agriculture</div>
+    <label>Crop & watering</label>
+    <div class="row">
+      <input type="text" name="crop" value="{{ agri.crop }}" placeholder="Crop (e.g. paddy)">
+      <select name="watering_strategy">
+        <option value="standard" {% if agri.watering=='standard' %}selected{% endif %}>Standard</option>
+        <option value="conservative" {% if agri.watering=='conservative' %}selected{% endif %}>Conservative</option>
+      </select>
+    </div>
+
+    <div class="sec">Maps & UI</div>
+    <label>Map display</label>
+    <div class="row">
+      <select name="map_layer">
+        <option value="standard" {% if map_pref.layer=='standard' %}selected{% endif %}>Standard</option>
+        <option value="terrain" {% if map_pref.layer=='terrain' %}selected{% endif %}>Terrain</option>
+      </select>
+      <label><input type="checkbox" name="map_cluster" {% if map_pref.cluster %}checked{% endif %}> Cluster markers</label>
+      <label><input type="checkbox" name="reduced_motion" {% if map_pref.reduced_motion %}checked{% endif %}> Reduce motion</label>
+    </div>
+
+    <label>Centering</label>
+    <div class="row">
+      <label><input type="radio" name="autocenter" value="geo" {% if map_pref.autocenter=='geo' %}checked{% endif %}> Auto-center to location</label>
+      <label><input type="radio" name="autocenter" value="last" {% if map_pref.autocenter=='last' %}checked{% endif %}> Last viewed</label>
+    </div>
+
+    <div class="sec">Location & Privacy</div>
+    <label>Location precision</label>
+    <div class="row">
+      <label><input type="radio" name="location_precision" value="precise" {% if location_precision=='precise' %}checked{% endif %}> Precise</label>
+      <label><input type="radio" name="location_precision" value="city" {% if location_precision=='city' %}checked{% endif %}> Approximate (city)</label>
+    </div>
+
+    <label>Default city</label>
+    <input type="text" name="default_city" value="{{ default_city }}" placeholder="e.g. Thiruvananthapuram">
+
+    <label>Analytics</label>
+    <div class="row">
+      <label><input type="checkbox" name="analytics" {% if analytics %}checked{% endif %}> Allow analytics</label>
+    </div>
+
+    <div class="sec">Notifications</div>
+    <label>Alert types</label>
+    <div class="row">
+      <label><input type="checkbox" name="alerts" value="rain" {% if 'rain' in alerts %}checked{% endif %}> Rain</label>
+      <label><input type="checkbox" name="alerts" value="storm" {% if 'storm' in alerts %}checked{% endif %}> Thunderstorm</label>
+      <label><input type="checkbox" name="alerts" value="uv" {% if 'uv' in alerts %}checked{% endif %}> High UV</label>
+      <label><input type="checkbox" name="alerts" value="aqi" {% if 'aqi' in alerts %}checked{% endif %}> Poor AQI</label>
+    </div>
+
+    <label>Quiet hours</label>
+    <div class="row">
+      <input type="time" name="quiet_start" value="{{ quiet.start }}"> –
+      <input type="time" name="quiet_end" value="{{ quiet.end }}">
+    </div>
+
+    <button type="submit">Save</button>
+    <div class="muted">Changes apply instantly and persist for this browser session.</div>
+  </form>
+</div>
+{% endblock %}

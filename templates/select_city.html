@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Select City for AQI Prediction{% endblock %}
+{% block content %}
+    <div class="container">
+        <h1 class="text-center my-4">Select City for AQI Prediction</h1>
+
+        {% if message %}
+        <p class="text-center text-danger">{{ message }}</p>
+        {% endif %}
+
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-6">
+                <form action="/index" method="POST" class="d-flex justify-content-center align-items-center">
+                    <div class="me-2">
+                        <label for="predict-city" class="form-label">Select City:</label>
+                        <select name="city" id="predict-city" class="form-select" required>
+                            <option value="" disabled selected>Select a city</option>
+                            {% for c in city %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="align-self-end">
+                        <input type="submit" value="Predict AQI" class="btn btn-primary">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

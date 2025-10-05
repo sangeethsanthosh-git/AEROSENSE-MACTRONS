@@ -1,0 +1,29 @@
+<style>
+  .card { border:1px solid #3a3a3a; border-radius:10px; background:rgba(51,51,51,0.8); padding:12px; color:#fff; }
+  .card h3 { margin:0 0 8px 0; font-size:16px; font-weight:600; }
+  .kv { display:grid; grid-template-columns:160px 1fr; gap:6px 12px; font-size:14px; }
+  .hint { opacity:0.9; font-size:13px; margin-top:6px; }
+</style>
+
+{% set w = weather or {} %}
+{% set adv = advice or {} %}
+{% set crop = (agri.crop if agri and agri.crop else '') %}
+{% set watering_strategy = (agri.watering if agri and agri.watering else 'standard') %}
+{% set desc = (w.desc or w.description or '')|lower %}
+{% set windy = (w.wind_speed or 0)|float >= 10 %}
+{% set wet = ('rain' in desc or 'storm' in desc or 'thunder' in desc) %}
+
+<div class="card">
+  <h3>Agriculture</h3>
+  <div class="kv">
+    <div>Crop</div><div>{{ crop or 'N/A' }}</div>
+    <div>Heat index</div><div>{{ adv.heat_index_c is number and (adv.heat_index_c ~ ' °C') or adv.heat_index_c or 'N/A' }}</div>
+    <div>Field work</div><div>{{ adv.agri or (wet and 'Postpone' or 'Field work OK') }}</div>
+    <div>Watering</div><div>{{ adv.watering or 'N/A' }} {{ watering_strategy != 'standard' and '(' ~ watering_strategy ~ ')' or '' }}</div>
+    <div>Wind</div><div>{{ w.wind_speed }} {{ wind_unit }} {{ windy and '(High)' or '' }}</div>
+    <div>Conditions</div><div>{{ w.description or 'N/A' }}</div>
+  </div>
+  <div class="hint">
+    Avoid spraying during rain or high winds; plan irrigation early morning to reduce evaporation, especially on high heat index days. 
+  </div>
+</div>

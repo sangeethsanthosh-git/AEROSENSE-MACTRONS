@@ -1,0 +1,27 @@
+<style>
+  .lang-sidebar { width:100%; display:flex; flex-direction:column; align-items:center; gap:8px; padding-top:6px; }
+  .lang-label { font-size:11px; color:#ddd; opacity:0.9; }
+  .lang-select {
+    width: 70px; background:#333; color:#fff; border:1px solid #555; border-radius:6px;
+    padding:4px 6px; font-size:12px; cursor:pointer;
+  }
+  .lang-save {
+    background:#555; color:#fff; border:0; border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer;
+  }
+  .lang-row { display:flex; gap:6px; align-items:center; justify-content:center; }
+</style>
+
+<div class="lang-sidebar">
+  <div class="lang-label">Language</div>
+  <form method="POST" action="/settings" class="lang-row">
+    {% set current = session.get('lang', 'en') %}
+    {% set languages = config.get('BABEL_SUPPORTED_LOCALES', ['en']) %}
+    <select name="lang" class="lang-select" aria-label="Select language" onchange="this.form.submit()">
+      {% for code in languages %}
+        <option value="{{ code }}" {% if code == current %}selected{% endif %}>{{ code|upper }}</option>
+      {% endfor %}
+    </select>
+    <!-- If you prefer an explicit button, remove onchange above and uncomment below -->
+    <!-- <button type="submit" class="lang-save">OK</button> -->
+  </form>
+</div>

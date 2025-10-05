@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Home{% endblock %} - AREOSENSE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; font-family: Arial, sans-serif; color: white;
+            background-size: cover; background-position: center; min-height: 100vh;
+            transition: background-image 0.5s ease-in-out;
+        }
+        .container { display: flex; height: 100vh; }
+        .sidebar {
+            width: 10px; background: rgba(42, 42, 42, 0.8); padding: 20px 0;
+            display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(5px);
+            transition: width 0.3s ease, padding 0.3s ease; overflow: hidden;
+        }
+        .sidebar:hover { width: 60px; padding: 20px 10px; }
+        .sidebar .logo { width: 90px; height: auto; margin-bottom: 10px; opacity: 0; transition: opacity 0.3s ease; }
+        .sidebar:hover .logo { opacity: 1; }
+        .sidebar .app-name {
+            font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 12px;
+            text-align: center; margin-bottom: 20px; color: white; opacity: 0; transition: opacity 0.3s ease; white-space: nowrap;
+        }
+        .sidebar:hover .app-name { opacity: 1; }
+        .sidebar a { display: block; margin: 10px 0; text-decoration: none; opacity: 0; transition: opacity 0.3s ease; }
+        .sidebar:hover a { opacity: 1; }
+        .sidebar a img { width: 30px; height: 30px; transition: transform 0.2s ease; }
+        .sidebar a:hover img { transform: scale(1.2); background: rgba(68, 68, 68, 0.8); border-radius: 5px; }
+
+        .main-content { flex: 1; padding: 20px; background: rgba(26, 26, 26, 0.7); backdrop-filter: blur(3px); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { font-size: 20px; font-weight: normal; margin: 0; }
+
+        .flash-messages { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 80%; max-width: 600px; }
+        .flash-message { padding: 10px; margin-bottom: 10px; border-radius: 5px; color: white; text-align: center; backdrop-filter: blur(5px); }
+        .flash-message.error { background: rgba(255, 99, 71, 0.8); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <img src="/static/images/logo.png" alt="AREOSENSE Logo" class="logo">
+            <div class="app-name">AREOSENSE</div>
+            <a href="/"><img src="/static/images/home.png" alt="Home"></a>
+            <a href="/air"><img src="/static/images/air.png" alt="Air"></a>
+            <a href="/stadium_map"><img src="/static/images/stadium.png" alt="Stadium Map"></a>
+            <a href="/agri_map"><img src="/static/images/agriculture.png" alt="Agriculture Map"></a>
+            <a href="/outdoor_map"><img src="/static/images/outdoor.png" alt="Outdoor Map"></a>
+            <a href="/settings"><img src="/static/images/settings.png" alt="Settings"></a>
+            <a href="/about"><img src="/static/images/about.png" alt="About"></a>
+
+        </div>
+
+        <div class="main-content">
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <div class="header">
+                <h1 id="location-header">AREOSENSE</h1>
+            </div>
+
+            <div id="content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+      (function(){
+        function isDayFromSunTimes(sunrise, sunset) {
+          if (!sunrise || !sunset) return null;
+          try { const nowUtc = Date.now()/1000; return nowUtc >= Number(sunrise) && nowUtc < Number(sunset); } catch(e){ return null; }
+        }
+        function pickBg(desc, isDayGuess) {
+          const isDay = (typeof isDayGuess === 'boolean') ? isDayGuess : (new Date().getHours() >= 6 && new Date().getHours() < 18);
+          const d = (desc || 'default').toLowerCase();
+          let key = `default_${isDay ? 'day' : 'night'}`;
+          if (d.includes('clear')) key = `sunny_${isDay ? 'day' : 'night'}`;
+          else if (d.includes('cloud') || d.includes('overcast')) key = `cloudy_${isDay ? 'day' : 'night'}`;
+          else if (d.includes('rain') || d.includes('shower')) key = `rainy_${isDay ? 'day' : 'night'}`;
+          else if (d.includes('snow')) key = `snowy_${isDay ? 'day' : 'night'}`;
+          else if (d.includes('thunderstorm')) key = `thunderstorm_${isDay ? 'day' : 'night'}`;
+          else if (d.includes('mist') || d.includes('haze') || d.includes('fog')) key = `mist_${isDay ? 'day' : 'night'}`;
+          return `/static/images/${key}.gif`;
+        }
+        function applyBackground(desc, sunrise, sunset) {
+          const dayFlag = isDayFromSunTimes(sunrise, sunset);
+          const url = pickBg(desc, dayFlag);
+          document.body.style.backgroundImage = `url('${url}')`;
+        }
+        window.__applyBackground = applyBackground;
+
+        document.addEventListener('DOMContentLoaded', function() {
+          const descFromVar = window.__bgDesc || '';
+          const descFromSpan = (document.getElementById('weather-desc')?.textContent || '').trim();
+          const sunrise = document.getElementById('weather-sunrise')?.textContent || window.__bgSunrise || 0;
+          const sunset  = document.getElementById('weather-sunset')?.textContent  || window.__bgSunset  || 0;
+          const desc = descFromVar || descFromSpan || '';
+          applyBackground(desc, sunrise, sunset);
+        });
+      })();
+    </script>
+
+    <!-- Optional: future notifications service worker registration -->
+    <!--
+    <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js').catch(console.error);
+    }
+    </script>
+    -->
+
+<!-- AI Assistant Drawer -->
+<div id="ai-assistant" class="ai-drawer" hidden>
+  <div class="ai-head">
+    <div>Assistant</div>
+    <button type="button" onclick="AI.toggle()" aria-label="Close assistant">✕</button>
+  </div>
+
+  <div id="ai-messages" class="ai-body"></div>
+
+  <div class="ai-foot">
+    <div id="ai-options" class="ai-chips"></div>
+    <form onsubmit="return AI.send(event)">
+      <input id="ai-input" type="text" placeholder="Ask about weather, activities, venues..." autocomplete="off">
+      <button type="submit">Send</button>
+    </form>
+  </div>
+</div>
+
+<!-- Floating toggle button -->
+<button id="ai-fab" class="ai-fab" type="button" onclick="AI.toggle()" aria-label="Open assistant" aria-pressed="false">
+  <svg class="ai-icon ai-icon-open" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M20 2H4a2 2 0 0 0-2 2v14l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
+  </svg>
+</button>
+
+<style>
+  /* Enforce hidden attribute to actually hide across all resets/frameworks */
+  .ai-drawer[hidden] { display: none !important; }
+
+  .ai-fab { position:fixed; right:16px; bottom:16px; width:48px; height:48px; border-radius:50%;
+    background:#555; color:#fff; border:1px solid #3a3a3a; cursor:pointer; z-index:10000; display:flex; align-items:center; justify-content:center; }
+  .ai-fab.open { background:#6b6b6b; }
+  .ai-icon { display:block; }
+  .ai-drawer { position:fixed; right:12px; bottom:76px; width:360px; max-width:92vw; max-height:70vh;
+    display:flex; flex-direction:column; border:1px solid #3a3a3a; border-radius:12px;
+    background:rgba(26,26,26,0.9); color:#fff; backdrop-filter: blur(4px); z-index:10000; transform-origin: bottom right; }
+  @keyframes aiPop {
+    0% { opacity:0; transform: translateY(8px) scale(0.96); }
+    100% { opacity:1; transform: none; }
+  }
+  @keyframes aiFade {
+    0% { opacity:1; transform: none; }
+    100% { opacity:0; transform: translateY(8px) scale(0.96); }
+  }
+  .ai-drawer.opening { animation: aiPop .2s ease-out; }
+  .ai-drawer.closing { animation: aiFade .15s ease-in; }
+
+  .ai-head { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-bottom:1px solid #3a3a3a; }
+  .ai-body { padding:10px; overflow:auto; display:grid; gap:8px; min-height:160px; }
+  .ai-msg { padding:8px 10px; border-radius:10px; border:1px solid #3a3a3a; background:#2a2a2a; }
+  .ai-msg.user { background:#333; }
+  .ai-foot { padding:10px; border-top:1px solid #3a3a3a; }
+  .ai-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .ai-chip { padding:4px 8px; border-radius:999px; border:1px solid #555; background:#333; cursor:pointer; }
+  .ai-foot form { display:flex; gap:8px; }
+  .ai-foot input { flex:1; background:#333; color:#fff; border:1px solid #555; border-radius:8px; padding:8px; }
+  .ai-foot button { background:#555; color:#fff; border:1px solid #3a3a3a; border-radius:8px; padding:8px 10px; cursor:pointer; }
+</style>
+
+<script>
+const AI = (() => {
+  let sid = localStorage.getItem('ai_sid') || '';
+  const elDrawer = () => document.getElementById('ai-assistant');
+  const elMsgs = () => document.getElementById('ai-messages');
+  const elOpts = () => document.getElementById('ai-options');
+  const elInput = () => document.getElementById('ai-input');
+  const elFab = () => document.getElementById('ai-fab');
+
+  function setFabState(open){
+    const b = elFab();
+    if (!b) return;
+    b.setAttribute('aria-pressed', open ? 'true' : 'false');
+    b.classList.toggle('open', open);
+    b.innerHTML = open
+      ? '<svg class="ai-icon ai-icon-close" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 0 0 5.7 7.11L10.59 12l-4.9 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.9a1 1 0 0 0 1.41-1.41L13.41 12l4.9-4.89a1 1 0 0 0-.01-1.4z"/></svg>'
+      : '<svg class="ai-icon ai-icon-open" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 2H4a2 2 0 0 0-2 2v14l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>';
+  }
+
+  function toggle(){
+    const d = elDrawer();
+    if (!d) return;
+    if (d.hidden) {
+      d.hidden = false;           // become visible only after button click
+      d.classList.remove('closing');
+      void d.offsetWidth;         // reflow for animation
+      d.classList.add('opening');
+      setFabState(true);
+      setTimeout(()=> d.classList.remove('opening'), 220);
+      try { elInput().focus(); } catch(e){}
+    } else {
+      d.classList.remove('opening');
+      d.classList.add('closing');
+      setFabState(false);
+      setTimeout(()=> { d.classList.remove('closing'); d.hidden = true; }, 160);
+    }
+  }
+
+  function append(sender, text){
+    const div = document.createElement('div');
+    div.className = 'ai-msg ' + (sender==='user'?'user':'bot');
+    div.textContent = text;
+    elMsgs().appendChild(div);
+    elMsgs().scrollTop = elMsgs().scrollHeight;
+  }
+  function setOptions(opts){
+    elOpts().innerHTML = '';
+    (opts||[]).forEach(o=>{
+      const b = document.createElement('button');
+      b.type='button'; b.className='ai-chip'; b.textContent=o;
+      b.onclick=()=> sendText(o);
+      elOpts().appendChild(b);
+    });
+  }
+  async function send(event){
+    if(event){event.preventDefault();}
+    const txt = elInput().value.trim();
+    if(!txt) return false;
+    elInput().value='';
+    return sendText(txt);
+  }
+  async function sendText(txt){
+    append('user', txt);
+    try{
+      const r = await fetch('/assistant/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: txt, session_id: sid })});
+      const j = await r.json();
+      if (j.session_id){ sid = j.session_id; localStorage.setItem('ai_sid', sid); }
+      if (j.message){ append('bot', j.message); }
+      setOptions(j.options || []);
+      if (j.ui && j.ui.close){
+        setTimeout(()=>{
+          const d = elDrawer();
+          if (d && !d.hidden) toggle();
+        }, 50);
+      }
+      if (j.deep_link && j.deep_link.url){ setTimeout(()=> window.location.href = j.deep_link.url, 250); }
+    }catch(e){
+      append('bot', 'Sorry—something went wrong.');
+    }
+    return false;
+  }
+  return { toggle, send };
+})();
+</script>
+</body>
+</html>

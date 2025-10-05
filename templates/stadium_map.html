@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% set show_global_search = false %}
+{% block title %}Stadium Map{% endblock %}
+
+{% block content %}
+<style>
+  .sm-topbar { display:flex; align-items:center; gap:10px; margin:8px 0 12px 0; }
+  .sm-badge { font-size:12px; padding:2px 8px; border:1px solid #3a3a3a; border-radius:999px; opacity:0.9; }
+  .sm-search { display:flex; gap:8px; margin:6px 0 16px 0; flex-wrap:wrap; }
+  .sm-search input[type="text"] { padding:8px 10px; border:1px solid #3a3a3a; border-radius:8px; min-width:260px; background:#333; color:#fff; }
+  .sm-search button { padding:8px 12px; border:0; border-radius:8px; background:#555; color:#fff; cursor:pointer; }
+
+  .sm-container { display:flex; gap:12px; height:70vh; min-height:520px; }
+  .sm-map-pane { flex:1.4; min-width:0; border:1px solid #3a3a3a; border-radius:12px; overflow:hidden; background:rgba(26,26,26,0.7); }
+  .sm-details-pane { flex:1; min-width:320px; max-width:520px; border:1px solid #3a3a3a; border-radius:12px; overflow:hidden; background:rgba(26,26,26,0.7); display:flex; flex-direction:column; }
+
+  .sm-panel-header { padding:10px 12px; border-bottom:1px solid #3a3a3a; background:rgba(42,42,42,0.8); color:#fff; }
+  .sm-header-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+
+  .sm-carousel { display:none; align-items:center; gap:8px; }
+  .sm-carousel button { background:#444; color:#fff; border:1px solid #555; border-radius:6px; padding:6px 10px; cursor:pointer; }
+  .sm-carousel select { background:#333; color:#fff; border:1px solid #555; border-radius:6px; padding:6px 8px; min-width:220px; }
+
+  .sm-panel-body { padding:12px; overflow-y:auto; display:grid; gap:12px; }
+  .sm-card { border:1px solid #3a3a3a; border-radius:10px; background:rgba(51,51,51,0.8); padding:12px; color:#fff; }
+  .sm-card h3 { margin:0 0 8px 0; font-size:16px; font-weight:600; }
+  .sm-muted { opacity:0.85; }
+  .sm-kv { display:grid; grid-template-columns:140px 1fr; gap:6px 12px; font-size:14px; }
+  .sm-list { display:grid; gap:6px; font-size:14px; }
+  .sm-hint { font-size:13px; opacity:0.9; }
+  .sm-stadium-link { color:#9ecbff; text-decoration:none; font-size:14px; }
+  .sm-stadium-link:hover { text-decoration:underline; }
+
+  #sm-map-root { position:relative; width:100%; height:100%; }
+  #sm-map-root .folium-map, #sm-map-root .leaflet-container, #sm-map-root .leaflet-pane { width:100% !important; height:100% !important; }
+
+  @media (max-width:960px) { .sm-container { flex-direction:column; height:auto; min-height:0; } .sm-details-pane { max-width:none; } }
+
+  /* CTA button: fixed at bottom center, above other UI */
+  .scroll-cta-up {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    padding: 6px 12px; border: 1px solid #3a3a3a; border-radius: 999px;
+    background: rgba(51,51,51,0.9); color: #fff; text-decoration: none; z-index: 10001;
+    backdrop-filter: blur(4px);
+  }
+  .scroll-cta-up:hover { background: #555; }
+</style>
+
+<div class="sm-topbar">
+  <h2 style="margin:0;font-weight:600;color:#fff;">Stadium map</h2>
+  <span class="sm-badge">{{ num_venues|default(0) }} matches</span>
+  <span id="nearby-badge" class="sm-badge" title="Within 5 km of live location">Nearby: 0 in 5 km</span>
+</div>
+
+<form method="post" action="{{ url_for('stadium_map') }}" class="sm-search">
+  <input type="text" name="search_query" placeholder="Search by stadium or city..." value="{{ request.form.get('search_query','') if request.method == 'POST' else '' }}" />
+  <button type="submit">Search</button>
+</form>
+
+<div class="sm-container">
+  <!-- Left: Map -->
+  <div class="sm-map-pane">
+    <div id="sm-map-root">{{ map_html | safe }}</div>
+  </div>
+
+  <!-- Right: Details -->
+  <div class="sm-details-pane">
+    <div class="sm-panel-header">
+      <div class="sm-header-row">
+        <span>Stadium details</span>
+        <div class="sm-carousel" id="sm-carousel">
+          <button type="button" id="sm-prev" aria-label="Previous stadium">‹</button>
+          <select id="sm-select" aria-label="Select stadium in this city"></select>
+          <button type="button" id="sm-next" aria-label="Next stadium">›</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Server-rendered placeholder using first stadium (improves initial UX and SEO) -->
+    <div id="sm-details" class="sm-panel-body">
+      {% set first = (stadium_data.keys()|list)[0] if stadium_data else None %}
+      {% if first %}
+        {% set sd = stadium_data[first] %}
+
+        <div class="sm-card">
+          <h3>{{ first }}</h3>
+          <div class="sm-kv">
+            <div class="sm-muted">City</div><div>{{ sd.city }}</div>
+            <div class="sm-muted">Coordinates</div><div>{{ sd.lat }}, {{ sd.lon }}</div>
+            <div class="sm-muted">Temperature</div><div>{{ sd.temp }} °C</div>
+            <div class="sm-muted">Wind</div><div>{{ sd.wind_speed }} m/s</div>
+            <div class="sm-muted">Sky</div><div>{{ sd.desc }}</div>
+            <div class="sm-muted">AQI</div><div>{{ sd.aqi_val }} ({{ sd.aqi_bucket }})</div>
+            <div class="sm-muted">Playing condition</div><div>{{ sd.condition }}</div>
+          </div>
+        </div>
+
+        {% with uv=sd.uvi, advice=sd.advice, aqi_bucket=sd.aqi_bucket, wind_speed=sd.wind_speed %}
+          {% include "partials/uv_card.html" %}
+          {% include "partials/outdoor_card.html" %}
+          {% include "partials/agri_card.html" %}
+        {% endwith %}
+
+        <div class="sm-card">
+          <h3>Next hours</h3>
+          <div class="sm-list">
+            {% if sd.forecast %}
+              {% for f in sd.forecast %}
+                <div>• {{ f.date }}: {{ f.temp }} °C, {{ f.description }}</div>
+              {% endfor %}
+            {% else %}
+              <div class="sm-muted">No short-term forecast available.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="sm-card">
+          <h3>Next days</h3>
+          <div class="sm-list">
+            {% if sd.daily_forecast %}
+              {% for f in sd.daily_forecast %}
+                <div>• {{ f.date }}: {{ f.temp }} °C, {{ f.description }}</div>
+              {% endfor %}
+            {% else %}
+              <div class="sm-muted">No daily forecast available.</div>
+            {% endif %}
+          </div>
+        </div>
+
+      {% else %}
+        <div class="sm-card">
+          <h3>Nothing selected</h3>
+          <div class="sm-hint">Open a marker popup to see weather, UV, outdoor, and agriculture advice here.</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  const stadiumData = {{ stadium_data | tojson | safe }};
+
+  // Group by city (fallback to rounded coords)
+  const groupsByCity = (() => {
+    const g = {};
+    for (const [name, d] of Object.entries(stadiumData || {})) {
+      const key = d.city || `${(+d.lat).toFixed(2)},${(+d.lon).toFixed(2)}`;
+      (g[key] = g[key] || []).push(name);
+    }
+    for (const k of Object.keys(g)) g[k].sort((a,b)=>a.localeCompare(b));
+    return g;
+  })();
+
+  // Find Leaflet map created by Folium
+  let _leafletMap = null;
+  function getLeafletMap() {
+    if (_leafletMap && _leafletMap.setView) return _leafletMap;
+    if (window.L && window.L.Map) {
+      for (const k in window) {
+        const v = window[k];
+        if (v && v instanceof L.Map && typeof v.setView === 'function') { _leafletMap = v; return v; }
+      }
+    }
+    for (const k in window) {
+      const v = window[k];
+      if (v && typeof v === 'object' && typeof v.setView === 'function' && typeof v.getCenter === 'function') { _leafletMap = v; return v; }
+    }
+    return null;
+  }
+
+  function flyMapTo(lat, lon, zoom=12) {
+    const map = getLeafletMap();
+    if (!map) return;
+    const z = typeof map.getZoom === 'function' ? Math.max(map.getZoom(), zoom) : zoom;
+    if (typeof map.flyTo === 'function') map.flyTo([lat, lon], z, { duration: 0.6 });
+    else map.setView([lat, lon], z);
+  }
+
+  function fmt(val, suffix = "") { if (val === null || val === undefined || val === "" || val === "N/A") return "N/A"; return suffix ? `${val} ${suffix}` : `${val}`; }
+
+  function setupCarouselFor(name) {
+    const d = stadiumData?.[name];
+    const wrap = document.getElementById('sm-carousel');
+    const sel = document.getElementById('sm-select');
+    const btnPrev = document.getElementById('sm-prev');
+    const btnNext = document.getElementById('sm-next');
+    if (!d) { wrap.style.display = 'none'; return; }
+
+    const key = d.city || `${(+d.lat).toFixed(2)},${(+d.lon).toFixed(2)}`;
+    const group = groupsByCity[key] || [];
+
+    if (group.length <= 1) {
+      wrap.style.display = 'none';
+      sel.innerHTML = '';
+      btnPrev.onclick = btnNext.onclick = sel.onchange = null;
+      return;
+    }
+
+    wrap.style.display = 'flex';
+    sel.innerHTML = group.map(n => `<option value="${n}">${n}</option>`).join('');
+    sel.value = name;
+
+    btnPrev.onclick = () => { const idx = group.indexOf(sel.value); sel.value = group[(idx - 1 + group.length) % group.length]; renderDetails(sel.value); };
+    btnNext.onclick = () => { const idx = group.indexOf(sel.value); sel.value = group[(idx + 1) % group.length]; renderDetails(sel.value); };
+    sel.onchange = () => renderDetails(sel.value);
+  }
+
+  function renderDetails(name) {
+    const d = stadiumData?.[name];
+    const el = document.getElementById("sm-details");
+    if (!d) {
+      el.innerHTML = `<div class="sm-card"><h3>${name}</h3><div class="sm-hint">No details available for this selection.</div></div>`;
+      document.getElementById('sm-carousel').style.display = 'none';
+      return;
+    }
+
+    // Recenter map
+    flyMapTo(d.lat, d.lon, 12);
+
+    // Core info
+    const nowBlock = `
+      <div class="sm-card">
+        <h3>${name}</h3>
+        <div class="sm-kv">
+          <div class="sm-muted">City</div><div>${fmt(d.city)}</div>
+          <div class="sm-muted">Coordinates</div><div>${fmt(d.lat)}, ${fmt(d.lon)}</div>
+          <div class="sm-muted">Temperature</div><div>${fmt(d.temp, "°C")}</div>
+          <div class="sm-muted">Wind</div><div>${fmt(d.wind_speed, "m/s")}</div>
+          <div class="sm-muted">Sky</div><div>${fmt(d.desc)}</div>
+          <div class="sm-muted">AQI</div><div>${fmt(d.aqi_val)} (${fmt(d.aqi_bucket)})</div>
+          <div class="sm-muted">Playing condition</div><div>${fmt(d.condition)}</div>
+        </div>
+      </div>`;
+
+    // UV card
+    const uv = d.uvi || {};
+    const uvBlock = `
+      <div class="sm-card">
+        <h3>UV Index</h3>
+        <div class="sm-kv">
+          <div class="sm-muted">Current</div><div>${uv.now ?? "N/A"} (${uv.level ?? "N/A"})</div>
+          <div class="sm-muted">Next days</div>
+          <div>${(uv.daily || []).map(u => `<span style="margin-right:8px">${u}</span>`).join("") || "N/A"}</div>
+        </div>
+      </div>`;
+
+    // Outdoor + Agri card
+    const adv = d.advice || {};
+    const outdoorBlock = `
+      <div class="sm-card">
+        <h3>Outdoor activity</h3>
+        <div class="sm-kv">
+          <div class="sm-muted">Recommendation</div><div>${adv.outdoor ?? "N/A"}</div>
+          <div class="sm-muted">Heat index</div><div>${adv.heat_index_c !== undefined ? adv.heat_index_c + " °C" : "N/A"}</div>
+          <div class="sm-muted">Field work</div><div>${adv.agri ?? "N/A"}</div>
+          <div class="sm-muted">Watering</div><div>${adv.watering ?? "N/A"}</div>
+        </div>
+      </div>`;
+
+    // Forecasts
+    const forecastItems = (d.forecast || []).map(f => `<div>• ${f.date}: ${fmt(f.temp, "°C")}, ${fmt(f.description)}</div>`).join("");
+    const forecastBlock = `<div class="sm-card"><h3>Next hours</h3><div class="sm-list">${forecastItems || `<div class="sm-muted">No short-term forecast available.</div>`}</div></div>`;
+    const dailyItems = (d.daily_forecast || []).map(f => `<div>• ${f.date}: ${fmt(f.temp, "°C")}, ${fmt(f.description)}</div>`).join("");
+    const dailyBlock = `<div class="sm-card"><h3>Next days</h3><div class="sm-list">${dailyItems || `<div class="sm-muted">No daily forecast available.</div>`}</div></div>`;
+
+    el.innerHTML = nowBlock + uvBlock + outdoorBlock + forecastBlock + dailyBlock;
+
+    // Prepare carousel
+    setupCarouselFor(name);
+  }
+
+  // Auto-load details when a marker popup opens (no inner click needed)
+  function attachAutoDetailsOnPopup() {
+    const map = getLeafletMap();
+    if (!map) return;
+    map.on('popupopen', (e) => {
+      const container = e.popup && typeof e.popup.getElement === 'function' ? e.popup.getElement() : null;
+      const link = container ? container.querySelector('[data-stadium]') : null;
+      if (link) renderDetails(link.getAttribute('data-stadium'));
+    });
+  }
+
+  // Delegated click on popup anchors remains as fallback
+  document.getElementById("sm-map-root").addEventListener("click", (e) => {
+    const link = e.target.closest("[data-stadium]");
+    if (link) { e.preventDefault(); renderDetails(link.getAttribute("data-stadium")); }
+  });
+
+  // Live geolocation with nearby count (5 km)
+  const radiusKm = 5;
+  let userMarker = null, userCircle = null;
+  function toRad(d){ return d*Math.PI/180; }
+  function haversine(aLat,aLon,bLat,bLon){ const R=6371, dLat=toRad(bLat-aLat), dLon=toRad(bLon-aLon); const h=Math.sin(dLat/2)**2+Math.cos(toRad(aLat))*Math.cos(toRad(bLat))*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+  function updateNearby(lat,lon){ let c=0; for (const d of Object.values(stadiumData||{})) if (haversine(lat,lon,+d.lat,+d.lon)<=radiusKm) c++; const b=document.getElementById('nearby-badge'); if (b) b.textContent=`Nearby: ${c} in ${radiusKm} km`; }
+  function onGeoSuccess(pos){
+    const { latitude: lat, longitude: lon } = pos.coords;
+    const map = getLeafletMap();
+    if (map && window.L) {
+      if (userMarker) userMarker.setLatLng([lat, lon]); else userMarker = L.marker([lat, lon], { title: "You are here" }).addTo(map);
+      if (userCircle) userCircle.setLatLng([lat, lon]); else userCircle = L.circle([lat, lon], { radius: radiusKm * 1000, color: "#4ea3ff", fillColor: "#4ea3ff", fillOpacity: 0.15 }).addTo(map);
+      flyMapTo(lat, lon, 12);
+    }
+    updateNearby(lat, lon);
+  }
+  function onGeoError(err){ console.warn("Geolocation error:", err); }
+  if (navigator.geolocation) navigator.geolocation.watchPosition(onGeoSuccess, onGeoError, { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 });
+
+  // Init
+  window.addEventListener("load", () => {
+    attachAutoDetailsOnPopup();
+    const names = Object.keys(stadiumData || {});
+    if (names.length > 0) renderDetails(names[0]);
+  });
+</script>
+
+<!-- Exit animation + scroll/swipe nav -->
+<style>
+  /* Exit animation when leaving to agri_map */
+  @keyframes stadiumSlideFade {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(12px); }
+  }
+  body.stadium-exit { animation: stadiumSlideFade .30s ease forwards; }
+</style>
+<script>
+  (function(){
+    let triggered = false;
+    const TARGET = '/agri_map'; // change to 'agri_map.html' if needed
+    function go(){
+      if (triggered) return;
+      triggered = true;
+      document.body.classList.add('stadium-exit');
+      setTimeout(function(){ window.location.href = TARGET; }, 280);
+    }
+    // Scroll wheel (desktop): navigate on downward scroll intent
+    window.addEventListener('wheel', function(e){ if (e.deltaY > 10) go(); }, {passive:true});
+    // Touch swipe up (mobile): navigate on upward swipe
+    let touchStartY = null;
+    window.addEventListener('touchstart', function(e){ touchStartY = (e.touches && e.touches[0] ? e.touches[0].clientY : null); }, {passive:true});
+    window.addEventListener('touchend', function(e){
+      if (touchStartY !== null && e.changedTouches && e.changedTouches[0]){
+        const endY = e.changedTouches[0].clientY;
+        if ((touchStartY - endY) > 30) go();
+      }
+      touchStartY = null;
+    }, {passive:true});
+
+    // CTA click: animate then navigate
+    document.addEventListener('click', function(e){
+      const a = e.target.closest('a.scroll-cta-up');
+      if (!a) return;
+      e.preventDefault();
+      document.body.classList.add('stadium-exit');
+      setTimeout(function(){ window.location.href = a.href; }, 280);
+    });
+  })();
+</script>
+
+<!-- Bottom CTA link -->
+<a class="scroll-cta-up" href="/agri_map"> ↓  Scroll Down</a>
+
+{% endblock %}

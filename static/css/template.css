@@ -1,0 +1,18 @@
+body {
+  font-family: 'Montserrat', sans-serif;
+  background-image: url(https://www.iisd.org/sites/default/files/styles/banner_desktop/public/2020-06/RS2085_food-agriculture-topic.jpg?h=10d202d3&itok=EhWRgCOf);
+  background-repeat: no-repeat;
+}
+
+
+.logo {
+  background-color: #182e9f;
+  padding: 10px;
+  color: rgb(24, 153, 63);
+  text-align: center;
+}
+
+.menu { 
+  display: inline-block;
+  text-align: left;
+ }

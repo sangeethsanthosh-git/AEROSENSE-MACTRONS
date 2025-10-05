@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Search Result{% endblock %}
+{% block content %}
+    <style>
+        /* Main content styling */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+        }
+
+        /* Heading styling */
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        /* Weather card styling */
+        .weather-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .weather-card h2 {
+            font-size: 2rem;
+            margin: 0 0 10px 0;
+            font-weight: normal;
+            color: white;
+        }
+
+        .weather-card h3 {
+            font-size: 3rem;
+            margin: 0 0 10px 0;
+            font-weight: bold;
+            color: white;
+        }
+
+        .weather-card p {
+            margin: 5px 0;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        /* Forecast section */
+        .forecast-container {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+
+        .forecast-container h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .forecast-list {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            padding: 10px 0;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.3);
+        }
+
+        .forecast-list::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .forecast-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .forecast-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+
+        .forecast-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .forecast-card p {
+            margin: 5px 0;
+            font-size: 1rem;
+            color: white;
+        }
+
+        .forecast-card .date {
+            font-weight: bold;
+        }
+
+        /* No data message */
+        .no-data {
+            color: #ff5555;
+            font-style: italic;
+            font-size: 1.2rem;
+        }
+    </style>
+
+    <div class="main-content">
+        <h1>Weather Search Result</h1>
+        <div class="weather-card">
+            {% if weather %}
+                <h2>{{ weather.city }}</h2>
+                <h3>{{ weather.temp }}°C</h3>
+                <p>{{ weather.description | capitalize }}</p>
+                <p>Humidity: {{ weather.humidity }}%</p>
+                <p>Wind: {{ weather.wind_speed }} m/s</p>
+            {% else %}
+                <p class="no-data">Weather data unavailable for this city.</p>
+            {% endif %}
+        </div>
+
+        <!-- 5-Day Forecast Section -->
+        <div class="forecast-container">
+            <h3>5-Day Forecast</h3>
+            <div class="forecast-list">
+                {% if forecast %}
+                    {% for entry in forecast %}
+                        <div class="forecast-card">
+                            <p class="date">{{ entry.date }}</p>
+                            <p>{{ entry.temp }}°C</p>
+                            <p>{{ entry.description | capitalize }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-data">Forecast data unavailable.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to set the background based on weather description
+        function setBackground(description) {
+            if (!description) return;
+            description = description.toLowerCase();
+            if (description.includes('clear')) {
+                document.body.style.backgroundImage = "url('/static/images/sunny.jpeg')";
+            } else if (description.includes('cloud')) {
+                document.body.style.backgroundImage = "url('/static/images/cloudy.jpeg')";
+            } else if (description.includes('rain') || description.includes('shower')) {
+                document.body.style.backgroundImage = "url('/static/images/rainy.jpeg')";
+            } else if (description.includes('snow')) {
+                document.body.style.backgroundImage = "url('/static/images/snowy.jpeg')";
+            } else if (description.includes('haze')) {
+                document.body.style.backgroundImage = "url('/static/images/haze.jpeg')";
+            } else {
+                document.body.style.backgroundImage = "url('/static/images/default.jpeg')";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Search_result.html loaded in new tab");
+            // Set the background based on the weather description
+            const description = "{{ weather.description if weather else '' }}";
+            setBackground(description);
+
+            // Debug to detect redirects or unloads
+            window.addEventListener('beforeunload', function(event) {
+                console.log("Search_result.html is about to unload. Current URL: " + window.location.href);
+            });
+
+            // Log every 5 seconds to confirm the page is still loaded
+            setInterval(function() {
+                console.log("Search_result.html is still loaded. Current URL: " + window.location.href);
+            }, 5000);
+        });
+    </script>
+{% endblock %}

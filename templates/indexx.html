@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Air Quality Prediction{% endblock %}
+{% block content %}
+<style>
+  .pred-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .pred-header h1 { font-size:20px; font-weight:normal; margin:0; }
+  .pred-header form { display:flex; align-items:center; }
+  .pred-header input[type="text"] {
+    padding:5px; font-size:14px; border:none; border-radius:3px 0 0 3px; background:#333; color:#fff;
+  }
+  .pred-header button {
+    padding:5px 10px; font-size:14px; border:none; background:#555; color:#fff; border-radius:0 3px 3px 0; cursor:pointer;
+  }
+
+  .weather-summary { text-align:center; }
+  .predict-button {
+    background-color:#4CAF50; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;
+    display:block; margin:0 auto;
+  }
+  .predict-button:hover { background-color:#45a049; }
+</style>
+
+<div class="pred-header">
+  <h1 id="location-header">{% if weather %}{{ weather.city }}{% else %}Location Unavailable{% endif %}</h1>
+  <form method="POST" action="{{ request.path }}">
+    <input type="text" name="city" id="city-input" placeholder="Search your city..." value="{% if weather %}{{ weather.city }}{% endif %}" required>
+    <button type="submit">Search</button>
+  </form>
+</div>
+
+{% if weather %}
+  <div class="weather-summary">
+    <h2>{{ weather.temp }} °C</h2>
+    <div><p>{{ weather.description | capitalize }}</p></div>
+    <div class="weather-details">
+      <p>Humidity: {{ weather.humidity }}%</p>
+      <p>Wind: {{ weather.wind_speed }} m/s</p>
+    </div>
+  </div>
+  <form method="POST" action="index">
+    <button type="submit" class="predict-button">Predict AQI for {{ weather.city }}</button>
+    <input type="hidden" name="city" value="{{ weather.city }}">
+  </form>
+{% else %}
+  <p>Weather data unavailable.</p>
+  <form method="POST" action="index">
+    <button type="submit" class="predict-button">Predict AQI</button>
+    <input type="hidden" name="city" value="">
+  </form>
+{% endif %}
+{% endblock %}

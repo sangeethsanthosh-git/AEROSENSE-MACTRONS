@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Air Quality Data - Pollution{% endblock %}
+{% block content %}
+    <style>
+        /* Center the form with a pleasant design */
+        .form-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .form-container form {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .form-container select {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            background: #333;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .form-container select:hover {
+            background: #444;
+        }
+        .form-container select:focus {
+            outline: none;
+            background: #555;
+        }
+        .form-container button {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(45deg, #4CAF50, #66BB6A);
+            color: white;
+            cursor: pointer;
+            transition: transform 0.1s ease, background 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .form-container button:hover {
+            background: linear-gradient(45deg, #66BB6A, #4CAF50);
+            transform: scale(1.05);
+        }
+        .form-container button:active {
+            transform: scale(0.95);
+        }
+        /* Table styles */
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            background: rgba(42, 42, 42, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+            backdrop-filter: blur(5px);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 8px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th {
+            background: #333;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        h2 {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <!-- Form to select city and year -->
+    <div class="form-container">
+        <form action="/select" method="POST" class="d-flex align-items-center">
+            <div class="me-2">
+                <select name="operator" id="operator" class="form-select">
+                    {% for c in city %}
+                    <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="me-2">
+                <select name="operator2" id="operator2" class="form-select">
+                    <option value="2025">2025</option>
+                    
+                </select>
+            </div>
+            <div>
+                <button type="submit">Show Last 10 Days Data</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Display air quality data -->
+    {% if data_list %}
+    <h2>{{ new }}</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Station</th>
+                    <th>PM2.5</th>
+                    <th>PM10</th>
+                    <th>NO2</th>
+                    <th>O3</th>
+                    <th>CO</th>
+                    <th>SO2</th>
+                    <th>AQI</th>
+                    <th>AQI Bucket</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data_list %}
+                <tr>
+                    <td>{{ row.Date }}</td>
+                    <td>{{ row.station }}</td>
+                    <td>{{ row['PM2.5'] if row['PM2.5'] is not none else 'N/A' }}</td>
+                    <td>{{ row['PM10'] if row['PM10'] is not none else 'N/A' }}</td>
+                    <td>{{ row['NO2'] if row['NO2'] is not none else 'N/A' }}</td>
+                    <td>{{ row['O3'] if row['O3'] is not none else 'N/A' }}</td>
+                    <td>{{ row['CO'] if row['CO'] is not none else 'N/A' }}</td>
+                    <td>{{ row['SO2'] if row['SO2'] is not none else 'N/A' }}</td>
+                    <td>{{ row['AQI'] if row['AQI'] is not none else 'N/A' }}</td>
+                    <td>{{ row['AQI_Bucket'] if row['AQI_Bucket'] is not none else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+{% endblock %}

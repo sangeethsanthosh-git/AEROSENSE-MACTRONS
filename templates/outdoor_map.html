@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Outdoor Map{% endblock %}
+{% block content %}
+<style>
+  .wrap { display:flex; gap:12px; height:70vh; min-height:520px; }
+  .map { flex:1.4; min-width:0; border:1px solid #3a3a3a; border-radius:12px; overflow:hidden; background:rgba(26,26,26,0.7); }
+  .panel { flex:1; min-width:320px; max-width:520px; border:1px solid #3a3a3a; border-radius:12px; overflow:hidden; background:rgba(26,26,26,0.7); display:flex; flex-direction:column; }
+  .head { padding:10px 12px; border-bottom:1px solid #3a3a3a; background:rgba(42,42,42,0.8); color:#fff; font-weight:600; }
+  .body { padding:12px; overflow-y:auto; display:grid; gap:12px; }
+  .controls { margin-bottom:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .controls input, .controls button { background:#333; color:#fff; border:1px solid #555; border-radius:6px; padding:6px 8px; }
+  .controls button { background:#555; border:0; cursor:pointer; }
+  .card { border:1px solid #3a3a3a; border-radius:10px; background:rgba(51,51,51,0.8); padding:12px; color:#fff; }
+  .hint { opacity:0.9; font-size:13px; margin-top:6px; }
+
+  .scroll-cta-up {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    background: rgba(42,42,42,0.85); color:#fff; border:1px solid #3a3a3a;
+    border-radius:999px; z-index:9999; backdrop-filter: blur(4px); text-decoration:none;
+    top: 14px; padding:6px 10px; font-size:12px;
+  }
+  .scroll-cta-up:hover { background: rgba(68,68,68,0.9); }
+
+  .page-fade { opacity:1; transition: opacity 220ms ease; }
+  .page-fade.out { opacity:0; }
+</style>
+
+<div class="wrap">
+  <div class="map">
+    <div id="omap-root">{{ map_html | safe }}</div>
+  </div>
+  <div class="panel">
+    <div class="head">Outdoor conditions</div>
+    <div class="body" id="omap-details">
+      <div class="controls">
+        <form method="POST" action="{{ url_for('outdoor_map') }}">
+          <input type="text" name="city" placeholder="Enter city">
+          <button type="submit">Load</button>
+        </form>
+
+        <form id="geo-form" method="POST" action="{{ url_for('outdoor_map') }}">
+          <input type="hidden" name="lat" id="geo-lat">
+          <input type="hidden" name="lon" id="geo-lon">
+          <button type="button" onclick="geoFetch()">Use current location</button>
+        </form>
+      </div>
+
+      {% set first = (place_data.keys()|list)[0] if place_data else None %}
+      {% if first %}
+        {% set pd = place_data[first] %}
+        {% set weather = pd.weather %}
+        {% set uvi = pd.uvi %}
+        {% set advice = pd.advice %}
+        {% include "partials/outdoor_card.html" %}
+      {% else %}
+        <div class="card"><h3>Nothing selected</h3><div class="hint">Search a city or use current location.</div></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<a class="scroll-cta-up" href="/agri_map">↑ Scroll Up</a>
+
+<script>
+  window.__units_symbol = "{{ units_symbol }}";
+  window.__wind_unit = "{{ wind_unit }}";
+  function geoFetch(){
+    if (!navigator.geolocation) { alert('Geolocation not supported'); return; }
+    navigator.geolocation.getCurrentPosition(function(pos){
+      document.getElementById('geo-lat').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('geo-lon').value = pos.coords.longitude.toFixed(6);
+      document.getElementById('geo-form').submit();
+    }, function(err){
+      alert('Unable to get location: ' + err.message);
+    }, { enableHighAccuracy:true, timeout:8000, maximumAge:0 });
+  }
+
+  (function(){
+    const reduced = {{ (session.get('map', {}).get('reduced_motion', False))|tojson }};
+    const shell = document.getElementById('content') || document.body;
+    if (!reduced) shell.classList.add('page-fade');
+
+    function nav(url){
+      if (reduced) { window.location.href = url; return; }
+      shell.classList.add('out');
+      setTimeout(()=> window.location.href = url, 200);
+    }
+
+    // Up-only scroll/swipe to agri_map
+    let fired=false, up=0;
+    function onWheel(e){
+      if (fired) return;
+      if (e.deltaY < 0){ up += (-e.deltaY); if (up > 400) { fired=true; nav('/agri_map'); } }
+    }
+    let startY=0;
+    function ts(e){ startY = e.touches[0].clientY; }
+    function tm(e){
+      if (fired) return;
+      const dy = e.touches[0].clientY - startY;   // positive on swipe down
+      if (dy > 80) { fired=true; nav('/agri_map'); }
+    }
+
+    window.addEventListener('wheel', onWheel, { passive:true });
+    window.addEventListener('touchstart', ts, { passive:true });
+    window.addEventListener('touchmove', tm, { passive:true });
+
+    if (!reduced) {
+      shell.classList.remove('out');
+      setTimeout(()=> shell.classList.remove('page-fade'), 250);
+    }
+  })();
+</script>
+
+<!-- Scroll-up animation to Agriculture (minimal add-on using page-fade) -->
+<script>
+(function(){
+  let triggered=false;
+  const TARGET = '/agri_map';
+  function go(url){
+    if(triggered) return; triggered=true;
+    const el=document.querySelector('.page-fade')||document.body;
+    el.classList.add('page-fade');
+    requestAnimationFrame(()=>{ el.classList.add('out'); setTimeout(()=>{ window.location.href=url; }, 240); });
+  }
+  // Only upward swipe/scroll
+  let touchStartY=null;
+  window.addEventListener('touchstart', e=>{ touchStartY = (e.touches&&e.touches[0])? e.touches[0].clientY : null; }, {passive:true});
+  window.addEventListener('touchend', e=>{ if(touchStartY!==null && e.changedTouches && e.changedTouches[0]){ const endY=e.changedTouches[0].clientY; if((endY - touchStartY) > 30) go(TARGET); } touchStartY=null; }, {passive:true});
+  window.addEventListener('wheel', e=>{ if(e.deltaY < -10) go(TARGET); }, {passive:true});
+})();
+</script>
+
+{% endblock %}

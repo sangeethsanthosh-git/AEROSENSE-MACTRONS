@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}AQI Predictions{% endblock %}
+{% block content %}
+    <div class="container">
+        <h1 class="text-center my-4">AQI Predictions</h1>
+
+        <!-- Form to select city for AQI prediction -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-6">
+                <form action="/index" method="POST" class="d-flex justify-content-center align-items-center">
+                    <div class="me-2">
+                        <label for="predict-city" class="form-label">Select City for AQI Prediction:</label>
+                        <select name="city" id="predict-city" class="form-select">
+                            {% for c in city %}
+                            <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="align-self-end">
+                        <input type="submit" value="Predict AQI" class="btn btn-primary">
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display weather information -->
+        {% if weather %}
+        <div class="weather-info">
+            <h3>Weather in {{ weather.city }}</h3>
+            <p>Temperature: {{ weather.temp }}°C</p>
+            <p>Description: {{ weather.description | capitalize }}</p>
+            <p>Humidity: {{ weather.humidity }}%</p>
+            <p>Wind Speed: {{ weather.wind_speed }} m/s</p>
+        </div>
+        {% else %}
+        <p class="no-data">Weather data unavailable.</p>
+        {% endif %}
+
+        <!-- News Section -->
+        <div class="news">
+            {% for item in news %}
+            <div class="news-card">
+                <h3>{{ item.title }}</h3>
+                <a href="{{ item.link }}">Read more...</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+

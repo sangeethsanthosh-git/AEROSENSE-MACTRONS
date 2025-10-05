@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}About Us{% endblock %}
+{% block content %}
+    {% if weather %}
+        <div class="weather-summary">
+            <h2>{{ weather.temp }}°C</h2>
+            <div>
+                <p>{{ weather.description | capitalize }}</p>
+                <div class="weather-details">
+                    <p>Humidity: {{ weather.humidity }}%</p>
+                    <p>Wind: {{ weather.wind_speed }} m/s</p>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p>Weather data unavailable.</p>
+    {% endif %}
+    <div class="about-section">
+        <h2>About AREOSENSE</h2>
+        <p>AREOSENSE is a cutting-edge platform designed to empower users with real-time weather insights and air quality data, fostering a deeper connection with the environment. Developed by a passionate group of innovators dedicated to leveraging technology for sustainability, this project combines advanced API integrations, machine learning, and user-friendly design to deliver accurate forecasts and pollution metrics. Our mission is to make environmental awareness accessible to all, helping communities make informed decisions for a healthier planet. Created in 2025, AREOSENSE reflects our commitment to harnessing data-driven solutions for a brighter, greener future.</p>
+        
+    </div>
+    
+{% endblock %}

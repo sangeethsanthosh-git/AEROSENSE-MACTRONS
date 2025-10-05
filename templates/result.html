@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}AQI Prediction Result{% endblock %}
+{% block content %}
+    <style>
+        /* Avoid conflict with base.html's container class */
+        .result-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        
+
+        .weather-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+
+        .weather-info p {
+            margin: 5px 0;
+            font-size: 16px;
+        }
+
+        .text-center {
+            margin: 20px 0;
+        }
+
+        .text-center h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .text-center p {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ddd;
+        }
+
+        .no-data {
+            font-size: 18px;
+            color: #ccc;
+            margin: 20px 0;
+        }
+
+        .news {
+            margin-top: 30px;
+        }
+
+        .news-card h3 {
+            font-size: 18px;
+            margin: 0 0 10px 0;
+        }
+
+        .news-card a {
+            color: #66b3ff;
+            text-decoration: none;
+        }
+
+        .news-card a:hover {
+            text-decoration: underline;
+        }
+
+        .location-label {
+            font-size: 16px;
+            color: #bbb;
+            margin-bottom: 10px;
+        }
+    </style>
+
+    <div class="result-container">
+        <h1 class="text-center my-4">AQI Prediction Result</h1>
+
+        <!-- Indicate whether this is the current location or a searched city -->
+        {% if weather %}
+            <p class="location-label">
+                {% if location_source == "geolocation" %}
+                    Current Location: {{ weather.city }}
+                {% elif location_source == "search" %}
+                    Searched City: {{ weather.city }}
+                {% else %}
+                    Location: {{ weather.city }}
+                {% endif %}
+            </p>
+        {% else %}
+            <p class="no-data">Unable to fetch location data. Please search for a city or ensure location services are enabled.</p>
+        {% endif %}
+
+        <!-- Display weather information -->
+        {% if weather %}
+        <div class="weather-info">
+            <h3>Weather in {{ weather.city }}</h3>
+            <p>Temperature: {{ weather.temp }}°C</p>
+            <p>Description: {{ weather.description | capitalize }}</p>
+            <p>Humidity: {{ weather.humidity }}%</p>
+            <p>Wind Speed: {{ weather.wind_speed }} m/s</p>
+        </div>
+        {% else %}
+        <p class="no-data">Weather data unavailable. Please try again later.</p>
+        {% endif %}
+
+        <!-- Display AQI prediction -->
+        {% if prediction %}
+        <div class="text-center">
+            <h2>Predicted AQI: {{ prediction[0] }}</h2>
+            <p>
+                {% if prediction[0] <= 50 %}
+                    Good
+                {% elif prediction[0] <= 100 %}
+                    Satisfactory
+                {% elif prediction[0] <= 200 %}
+                    Moderate
+                {% elif prediction[0] <= 300 %}
+                    Poor
+                {% elif prediction[0] <= 400 %}
+                    Very Poor
+                {% else %}
+                    Severe
+                {% endif %}
+            </p>
+        </div>
+        {% else %}
+        <p class="no-data">AQI prediction unavailable due to missing weather data.</p>
+        {% endif %}
+    </div>
+{% endblock %}

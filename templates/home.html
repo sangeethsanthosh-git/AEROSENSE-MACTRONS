@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<style>
+  .home-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .home-header h1 { font-size:20px; font-weight:normal; margin:0; }
+  .home-header form { display:flex; align-items:center; }
+  .home-header input[type="text"] {
+    padding:5px; font-size:14px; border:none; border-radius:3px 0 0 3px; background:#333; color:#fff;
+  }
+  .home-header button {
+    padding:5px 10px; font-size:14px; border:none; background:#555; color:#fff; border-radius:0 3px 3px 0; cursor:pointer;
+  }
+
+  .weather-container { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height: 80vh; text-align:center; color:white; text-shadow:1px 1px 2px rgba(0,0,0,0.5); }
+  .weather-summary { margin-bottom:20px; }
+  .forecast-container { margin-top:20px; width:100%; }
+  .forecast-header { margin-bottom:10px; }
+  .forecast-items { display:flex; flex-direction:row; justify-content:center; gap:15px; overflow-x:auto; }
+  .forecast-day { background:rgba(255,255,255,0.1); padding:10px; border-radius:5px; min-width:150px; text-align:center; }
+  .toggle-button { background-color:#4CAF50; color:white; padding:8px 16px; border:none; border-radius:5px; cursor:pointer; margin-top:10px; }
+  .toggle-button:hover { background-color:#45a049; }
+  .hidden { display:none; }
+</style>
+
+<div class="home-header">
+  <h1 id="location-header">{% if weather %}{{ weather.city }}{% else %}Location Unavailable{% endif %}</h1>
+  <form method="POST" action="{{ request.path }}">
+    <input type="text" name="city" id="city-input" placeholder="Search your city..." value="{% if weather %}{{ weather.city }}{% endif %}" required>
+    <button type="submit">Search</button>
+  </form>
+</div>
+
+<script>
+  function updateBackground(weather) {
+    const now = new Date();
+    const isDay = now.getHours() >= 6 && now.getHours() < 18;
+    const desc = weather ? (weather.description || 'default').toLowerCase() : 'default';
+    let bg = `/static/images/default_${isDay ? 'day' : 'night'}.gif`;
+    if (desc.includes('clear')) bg = `/static/images/sunny_${isDay ? 'day' : 'night'}.gif`;
+    else if (desc.includes('cloud') || desc.includes('overcast')) bg = `/static/images/cloudy_${isDay ? 'day' : 'night'}.gif`;
+    else if (desc.includes('rain') || desc.includes('shower')) bg = `/static/images/rainy_${isDay ? 'day' : 'night'}.gif`;
+    else if (desc.includes('snow')) bg = `/static/images/snowy_${isDay ? 'day' : 'night'}.gif`;
+    else if (desc.includes('thunderstorm')) bg = `/static/images/thunderstorm_${isDay ? 'day' : 'night'}.gif`;
+    else if (desc.includes('mist') || desc.includes('haze') || desc.includes('fog')) bg = `/static/images/mist_${isDay ? 'day' : 'night'}.gif`;
+    document.body.style.backgroundImage = `url('${bg}')`;
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if weather %}
+      updateBackground({ description: "{{ weather.description }}" });
+    {% else %}
+      updateBackground(null);
+    {% endif %}
+
+    // Home geolocation bootstrap
+    {% if not geolocation_attempted and request.path == '/' %}
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const lat = position.coords.latitude, lon = position.coords.longitude;
+          fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:`lat=${lat}&lon=${lon}` })
+          .then(r => r.text()).then(html => {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            document.querySelector('#location-header').innerHTML = doc.querySelector('#location-header').innerHTML;
+            const newCity = doc.querySelector('#city-input');
+            if (newCity && document.querySelector('#city-input')) document.querySelector('#city-input').value = newCity.value;
+            const newDesc = doc.querySelector('#weather-desc')?.textContent || "{{ weather.description if weather else 'default' }}";
+            updateBackground({ description: newDesc });
+            document.querySelector('#content').innerHTML = doc.querySelector('#content').innerHTML;
+          });
+        },
+        function() {
+          fetch('/', { method:'POST', body:'geolocation_failed=true' })
+          .then(r => r.text()).then(html => {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            document.querySelector('#location-header').innerHTML = doc.querySelector('#location-header').innerHTML;
+            const newCity = doc.querySelector('#city-input');
+            if (newCity && document.querySelector('#city-input')) document.querySelector('#city-input').value = newCity.value;
+            const newDesc = doc.querySelector('#weather-desc')?.textContent || "{{ weather.description if weather else 'default' }}";
+            updateBackground({ description: newDesc });
+            document.querySelector('#content').innerHTML = doc.querySelector('#content').innerHTML;
+          });
+        }
+      );
+    }
+    {% endif %}
+  });
+</script>
+
+{% if weather %}
+  <span id="weather-desc" style="display:none">{{ weather.description }}</span>
+  <span id="weather-sunrise" style="display:none">{{ weather.sunrise }}</span>
+  <span id="weather-sunset" style="display:none">{{ weather.sunset }}</span>
+{% endif %}
+
+<!-- Existing Home page weather layout below -->
+<div class="weather-container">
+  {% if weather %}
+    <div class="weather-summary">
+      <h1>{{ weather.city }}</h1>
+      <h2>{{ weather.temp }} °C</h2>
+      <div><p>{{ weather.description | capitalize }}</p></div>
+      <div class="weather-details">
+        <p>Humidity: {{ weather.humidity }}%</p>
+        <p>Wind: {{ weather.wind_speed }} m/s</p>
+      </div>
+    </div>
+
+    <div class="forecast-container">
+      <div class="forecast-header"><h3>Next hours</h3></div>
+      <div class="forecast-items">
+        {% for f in short_term_forecast %}
+          <div class="forecast-day">
+            <div>{{ f.date }}</div>
+            <div>{{ f.temp }} °C</div>
+            <div>{{ f.description }}</div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="forecast-header" style="margin-top:14px;"><h3>Next days</h3></div>
+      <div class="forecast-items">
+        {% for f in daily_forecast %}
+          <div class="forecast-day">
+            <div>{{ f.date }}</div>
+            <div>{{ f.temp }} °C</div>
+            <div>{{ f.description }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <p>Weather data unavailable.</p>
+  {% endif %}
+</div>
+{% endblock %}
