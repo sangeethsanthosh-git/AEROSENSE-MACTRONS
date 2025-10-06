@@ -43,12 +43,13 @@ python app.py
 ![Preview 1](static/assets/1.png)
 ## AQI Prediction Page
 ![Preview 2](static/assets/2.png)
-## Stadium Location & Weather Page
 ![Preview 3](static/assets/3.png)
-## Outdoor Activity Page
+## Stadium Location & Weather Page
 ![Preview 4](static/assets/4.png)
-## Agriculture Activity Weather page
+## Outdoor Activity Pag
 ![Preview 5](static/assets/5.png)
+## Agriculture Activity Weather page
+![Preview 8](static/assets/8.png)
 ## Settings page
 ![Preview 6](static/assets/6.png)
 ## AI Assistant Window 
