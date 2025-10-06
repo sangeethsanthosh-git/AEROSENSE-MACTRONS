@@ -39,19 +39,19 @@ python app.py
 
 ## Project Previews
 
-#Home Page
+# Home Page
 ![Preview 1](static/assets/1.png)
-#AQI Prediction Page
+# AQI Prediction Page
 ![Preview 2](static/assets/2.png)
-#Stadium Location & Weather Page
+# Stadium Location & Weather Page
 ![Preview 3](static/assets/3.png)
-#Outdoor Activity Page
+# Outdoor Activity Page
 ![Preview 4](static/assets/4.png)
-#Agriculture Activity Weather page
+# Agriculture Activity Weather page
 ![Preview 5](static/assets/5.png)
-#Settings page
+# Settings page
 ![Preview 6](static/assets/6.png)
-#AI Assistant Window 
+# AI Assistant Window 
 ![Preview 7](static/assets/7.png)
 
 
