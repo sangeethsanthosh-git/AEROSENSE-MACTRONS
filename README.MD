@@ -2,7 +2,7 @@
 A hackathon‑ready weather application by team Mcatrons featuring current conditions, UV Index, multilingual UI scaffolding, an embedded AI assistant drawer, and a stadium map experience.
 Built as a Flask server‑rendered app with Jinja templates, the project emphasizes quick setup, consistent layout via base.html, and extensibility for additional data sources and views
 
-### Application tested on:
+# Application tested on:
 
 - python 3.9.0
 
@@ -10,7 +10,7 @@ Built as a Flask server‑rendered app with Jinja templates, the project emphasi
 python 3.9.0 is a stabled version so we can use the esensial library's
 
 
-### Using `venv`
+# Using `venv`
 
 1. Make a virtual environment using `venv` and activate it
 ```
@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ```
 python app.py
 ```
-## Feature
+# Feature
 
 * Weather and UV Index via OpenWeather One Call 3.0, integrated server‑side for reliable rendering in templates.
 
@@ -37,37 +37,37 @@ python app.py
 * Stadium map page with a Folium map and live‑updating details panel wired to a dedicated route.
 
 
-## Project Previews
+# Project Previews
 
-# Home Page
+## Home Page
 ![Preview 1](static/assets/1.png)
-# AQI Prediction Page
+## AQI Prediction Page
 ![Preview 2](static/assets/2.png)
-# Stadium Location & Weather Page
+## Stadium Location & Weather Page
 ![Preview 3](static/assets/3.png)
-# Outdoor Activity Page
+## Outdoor Activity Page
 ![Preview 4](static/assets/4.png)
-# Agriculture Activity Weather page
+## Agriculture Activity Weather page
 ![Preview 5](static/assets/5.png)
-# Settings page
+## Settings page
 ![Preview 6](static/assets/6.png)
-# AI Assistant Window 
+## AI Assistant Window 
 ![Preview 7](static/assets/7.png)
 
 
 
 
-### Tested environment 
+# Tested environment 
 * The application is implemented as a Flask server with Jinja templates and runs in a standard Python 3 environment consistent with app.py usage patterns.
 * If a pinned Python version is required for dependencies, capture it here once finalized during environment setup and dependency resolution for reproducible installs.
 
 
-### Using a virtual environment
+# Using a virtual environment
 * Create and activate a virtual environment using venv to isolate dependencies for development and testing.
 
 * Install project dependencies as defined in the repository to ensure consistent runtime behavior across machines.
 
-## Installation
+# Installation
 * Prefer installing from a requirements.txt to capture all transitive dependencies in a reproducible manner for the Flask app.
 
 * If a system‑specific workaround is needed, document the additional steps here after validating in local and CI environments to avoid version conflicts.
@@ -78,7 +78,7 @@ python app.py
 
 
 
-## Modules
+# Modules
 * Weather and UV: Server routes fetch current conditions and UV Index from OpenWeather One Call 3.0 and inject them into Jinja templates for display.
 
 * Internationalization: The base template provides localization hooks so strings can be translated and toggled as the project adds languages.
@@ -87,20 +87,20 @@ python app.py
 
 * Stadium Map: A dedicated page renders a Folium map with a details panel that updates when a stadium is selected, connected to a /stadium_map route.
 
-## Routes
+# Routes
 * Home: The main page rendered from app.py shows current weather and UV metrics using data fetched on the server side for reliable presentation.
 
 * Stadium Map: The /stadium_map route loads the Folium map and side panel for stadium selection and context details in a split‑view layout.
 
-## Architecture
+# Architecture
 * Backend: Flask routes orchestrate data retrieval, including OpenWeather One Call 3.0, and render Jinja templates with a consistent layout.
 
 * Frontend layout: base.html centralizes navigation, styles, scripts, i18n hooks, and the assistant drawer so features are globally available.
 
-## Acknowledgments
+# Acknowledgments
 * Weather and UV Index data powered by OpenWeather’s One Call 3.0, integrated in server routes for stable rendering.
 
-## Future Enhancements 
+# Future Enhancements 
 
 # Assistant UX
 * Add quick actions as persistent chips (UV, AQI, Best time, Open maps) that persist across pages via sessionStorage so transitions don’t reset context.
