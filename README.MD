@@ -1,149 +1,175 @@
-# AEROSENSE
-A hackathon‑ready weather application by team Mcatrons featuring current conditions, UV Index, multilingual UI scaffolding, an embedded AI assistant drawer, and a stadium map experience.
-Built as a Flask server‑rendered app with Jinja templates, the project emphasizes quick setup, consistent layout via base.html, and extensibility for additional data sources and views
+# 🌫️ AEROSENSE
 
-# Application tested on:
+AEROSENSE is a Flask-based air quality prediction system that combines weather intelligence, historical pollution data, interactive maps, and machine learning workflows into a single web application. The project is designed to help users understand current environmental conditions, explore city-level AQI patterns, and view activity-specific recommendations for outdoor, agricultural, and sports use cases.
 
-- python 3.9.0
+## 🎯 Problem Statement
 
+Air pollution directly affects health, travel, sports, and daily outdoor activity, yet environmental information is often scattered across multiple platforms. AEROSENSE addresses this by bringing weather insights, AQI-oriented datasets, and predictive workflows together in one accessible interface for faster, more informed decisions.
 
-python 3.9.0 is a stabled version so we can use the esensial library's
+## ✨ Features
 
+- Flask web application with Jinja2 templates and static assets
+- City search and geolocation-based weather lookup
+- AQI prediction flow using weather-derived input features
+- Historical air-quality exploration from CSV datasets in `city_air/`
+- Interactive Folium map views for stadium, outdoor, and agriculture scenarios
+- UV index and contextual activity advice cards
+- Embedded assistant chat route for quick in-app guidance
+- Language and preference settings using Flask-Babel session support
+- Machine learning experimentation notebooks for AQI modeling
 
-# Using `venv`
+## 🛠️ Tech Stack
 
-1. Make a virtual environment using `venv` and activate it
+- Backend: Python, Flask, Flask-Babel
+- Data Processing: Pandas, NumPy
+- Visualization: Matplotlib, Seaborn, Folium
+- Machine Learning: scikit-learn
+- Frontend: HTML, CSS, JavaScript, Jinja2
+- Data Sources: Local CSV datasets, OpenWeather API, venue mapping data
+
+## 🧭 Architecture Flow
+
+```text
+User input / geolocation
+        |
+        v
+Flask routes in app.py
+        |
+        +--> OpenWeather API --> current weather / forecast / UV --> templates
+        |
+        +--> city_air/city1_day.csv --> preprocessing --> AQI bucket / pollution views
+        |
+        +--> weather-derived feature vector --> AQI regressor --> prediction result
+        |
+        +--> venues.csv + Folium --> stadium / outdoor / agriculture maps
+        |
+        v
+Rendered UI through templates/ + static/
 ```
-venv\Scripts\activate
 
-make sure the file location is correct the project is with in a folder  
+## 📁 Folder Structure
+
+```text
+AEROSENSE/
+├── app.py
+├── requirements.txt
+├── model.pkl
+├── index.pkl
+├── solution.pkl
+├── venues.csv
+├── merge_datasets.py
+├── app.yaml
+├── appengine_config.py
+├── docs/
+│   └── img/
+│       ├── home.png
+│       ├── aqi predict.png
+│       └── stadium.png
+├── city_air/
+│   ├── city_day.csv
+│   ├── city1_day.csv
+│   └── city.py
+├── model/
+│   ├── code.py
+│   └── price.csv
+├── ML_Algorithms/
+│   ├── AQI_ExtraTreesRegressor.ipynb
+│   ├── AQI_XgboostRegressor.ipynb
+│   ├── AQI_Decision_Tree2.ipynb
+│   └── AOI_SVR (1).ipynb
+├── ML_Applied_Word/
+│   └── PreProcess/
+│       ├── AQI_linear_regressor.ipynb
+│       ├── extract_combinedata.py
+│       └── web_scrap_code.py
+├── templates/
+│   ├── base.html
+│   ├── home.html
+│   ├── prediction.html
+│   ├── result.html
+│   ├── pollution.html
+│   ├── stadium_map.html
+│   ├── outdoor_map.html
+│   ├── agri_map.html
+│   ├── settings.html
+│   ├── about.html
+│   └── partials/
+├── static/
+│   ├── css/
+│   ├── images/
+│   └── assets/
+├── pest/
+└── soil Fertility/
 ```
-2. Install python dependencies
-```
-pip install -r requirements.txt
-```
-3. Run the webapp. Be sure to set the appropriate values in `app.yaml` file before running the application.
-```
-python app.py
-```
-# Feature
 
-* Weather and UV Index via OpenWeather One Call 3.0, integrated server‑side for reliable rendering in templates.
+## 🚀 Installation
 
-* Internationalization scaffolding in base.html for multi‑language UI readiness and centralized string hooks.
+1. Clone the repository.
+2. Create and activate a virtual environment.
+3. Install dependencies:
 
-* Embedded AI assistant drawer with a floating trigger button for in‑context help across all pages.
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-* Stadium map page with a Folium map and live‑updating details panel wired to a dedicated route.
+4. Update the OpenWeather API key in `app.py` before running the app.
+5. Start the Flask server:
 
+   ```bash
+   python app.py
+   ```
 
-# Project Previews
+> Recommended environment: Python 3.9.0. The included `app.yaml` is a legacy App Engine configuration and may require modernization for deployment.
 
-## Home Page
-![Preview 1](static/assets/1.png)
-## AQI Prediction Page
-![Preview 2](static/assets/2.png)
-![Preview 3](static/assets/3.png)
-## Stadium Location & Weather Page
-![Preview 4](static/assets/4.png)
-## Outdoor Activity Pag
-![Preview 5](static/assets/5.png)
-## Agriculture Activity Weather page
-![Preview 8](static/assets/8.png)
-## Settings page
-![Preview 6](static/assets/6.png)
-## AI Assistant Window 
-![Preview 7](static/assets/7.png)
+## ▶️ Usage
 
+1. Launch the app locally and open the provided Flask URL in your browser.
+2. Search for a city or allow geolocation on the home page.
+3. Navigate through AQI prediction, pollution views, stadium map, outdoor map, and agriculture map pages.
+4. Use the settings page to adjust language, units, and user preferences.
 
+## 🤖 Model Details
 
+- `model.pkl` is a serialized scikit-learn `LinearRegression` model generated from `model/code.py` and serves as a bundled sample artifact.
+- AQI-focused experimentation is stored in the notebooks under `ML_Algorithms/`, including Decision Tree, Extra Trees, SVR, and XGBoost approaches.
+- The main prediction route in `app.py` builds an 8-feature weather input vector and is intended to use `tree_gridcv.pkl`, which is referenced in code but not committed in this repository.
+- `index.pkl` and `solution.pkl` are preprocessed AQI-ready DataFrame artifacts, each containing `24,850` rows and `17` columns.
 
-# Tested environment 
-* The application is implemented as a Flask server with Jinja templates and runs in a standard Python 3 environment consistent with app.py usage patterns.
-* If a pinned Python version is required for dependencies, capture it here once finalized during environment setup and dependency resolution for reproducible installs.
+## 📊 Dataset Description
 
+- `city_air/city_day.csv`: `29,531` daily AQI records across `26` Indian cities from `2015-01-01` to `2020-07-01`
+- `city_air/city1_day.csv`: `12,524` station-wise pollutant records across `260` cities, used for in-app preprocessing and AQI bucket generation
+- `venues.csv`: `85` mapped sports venues used by the stadium weather and playing-condition view
+- `merge_datasets.py`: utility script to merge historical city data with newer WAQI-based air-quality records
 
-# Using a virtual environment
-* Create and activate a virtual environment using venv to isolate dependencies for development and testing.
+## 🖼️ Screenshots
 
-* Install project dependencies as defined in the repository to ensure consistent runtime behavior across machines.
+### Home Dashboard
 
-# Installation
-* Prefer installing from a requirements.txt to capture all transitive dependencies in a reproducible manner for the Flask app.
+![Home Dashboard](docs/img/home.png)
 
-* If a system‑specific workaround is needed, document the additional steps here after validating in local and CI environments to avoid version conflicts.
+### AQI Prediction
 
+![AQI Prediction](docs/img/aqi%20predict.png)
 
-* python app.py
+### Stadium Map
 
+![Stadium Map](docs/img/stadium.png)
 
+## 🔮 Future Improvements
 
+- Add and version the production AQI model artifact used by the prediction route
+- Move API keys and secret values to environment variables
+- Add evaluation metrics, reproducible training steps, and model comparison summaries
+- Introduce scheduled data refresh pipelines for live AQI updates
+- Modernize deployment configuration and add container support
+- Expand test coverage for preprocessing, routes, and prediction logic
 
-# Modules
-* Weather and UV: Server routes fetch current conditions and UV Index from OpenWeather One Call 3.0 and inject them into Jinja templates for display.
+## 👤 Author
 
-* Internationalization: The base template provides localization hooks so strings can be translated and toggled as the project adds languages.
+Sangeeth Santhosh  
+Team Mcatrons
 
-* AI Assistant: A drawer UI appended to base.html offers help and quick actions throughout the app via a non‑intrusive floating button.
+## 📄 License
 
-* Stadium Map: A dedicated page renders a Folium map with a details panel that updates when a stadium is selected, connected to a /stadium_map route.
-
-# Routes
-* Home: The main page rendered from app.py shows current weather and UV metrics using data fetched on the server side for reliable presentation.
-
-* Stadium Map: The /stadium_map route loads the Folium map and side panel for stadium selection and context details in a split‑view layout.
-
-# Architecture
-* Backend: Flask routes orchestrate data retrieval, including OpenWeather One Call 3.0, and render Jinja templates with a consistent layout.
-
-* Frontend layout: base.html centralizes navigation, styles, scripts, i18n hooks, and the assistant drawer so features are globally available.
-
-# Acknowledgments
-* Weather and UV Index data powered by OpenWeather’s One Call 3.0, integrated in server routes for stable rendering.
-
-# Future Enhancements 
-
-# Assistant UX
-* Add quick actions as persistent chips (UV, AQI, Best time, Open maps) that persist across pages via sessionStorage so transitions don’t reset context.
-
-* Enable voice input/output in the drawer using the Web Speech API for hands‑free queries like “UV in Kochi now,” respecting the existing drawer and message flow.
-
-# Personalization
-* Remember preferred cities, units, date/time formats, and map zoom per route using the session preferences already injected into templates, and surface them as one‑tap chips in each map page.
-
-* Offer profiles for “Athlete,” “Farmer,” and “Event staff” to change default cards and tips per page (e.g., show agri advice first on Agriculture and outdoor training windows first on Outdoor).
-
-# Map interactions
-* Lazy‑load Folium layers and cluster markers for large datasets to keep interactions smooth while retaining the current Leaflet plumbing used in Stadium/Outdoor/Agriculture pages.
-
-* Add “Navigate by scroll” hints and a small minimap/compass overlay that shows where up/down leads (Stadium ↔ Agriculture ↔ Outdoor), consistent with current scroll navigation patterns.
-
-# Performance
-* Cache weather/AQI responses per city for short TTLs (e.g., 2–5 minutes) server‑side to reduce API calls and speed page renders while preserving current template context injection.
-
-* Defer noncritical JS and inline critical CSS for the base shell to improve first contentful paint without altering the assistant’s toggle behavior or overlay.
-
-# Accessibility
-* Ensure drawer controls and chips have ARIA labels and tab order; add “Reduce motion” detection and respect it in all page‑fade transitions already present on maps.
-
-* Provide high‑contrast theme and larger touch targets for top/bottom CTA links on Agriculture and Outdoor pages for better mobile ergonomics.
-
-# Internationalization
-* Expand Babel locales beyond en/hi/ml/ta and add runtime language toggle in the assistant footer, reusing the locale selector that stores language in session.
-
-* Localize units/phrasing in cards (e.g., “Heat index,” “Best time”) by wrapping those strings with gettext and shipping per‑locale templates where needed.
-
-# Offline and resilience
-* Add a service worker for offline fallback tiles and cached last‑known weather so the maps/pages render basic info even with flaky connectivity, using the stubbed SW hook already noted in the base layout.
-
-* Gracefully degrade Folium interactivity to a static map image if Leaflet fails to initialize, keeping the right‑pane cards and assistant usable.
-
-# Data quality and insights
-* Add confidence bands to forecasts and show data sources/time stamps in cards, aligning with the existing “Next hours/Next days” sections and advice blocks.
-
-* Compute simple risk scores (heat stress, poor air, wind caution) and color the page header or chip badges to match conditions without changing current card structure.
-
-# DevOps and safety
-* Move the Flask secret key to environment variables and rotate keys across environments; add a simple health endpoint and request logging with redaction.
-
-* Add rate limiting for the /assistant/chat route and validate input size to prevent abuse while maintaining the current JSON shape and options/deep_link fields.
+This repository does not currently include an explicit license file. Add a project license before public distribution or reuse.
